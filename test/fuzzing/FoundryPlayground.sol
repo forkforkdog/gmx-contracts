@@ -2,9 +2,8 @@
 pragma solidity ^0.8.25;
 
 import "./FuzzSetup.sol";
-import "forge-std/Test.sol";
 
-contract FoundryPlayground is FuzzSetup, Test {
+contract FoundryPlayground is FuzzSetup {
     function setUp() public {
         setup();
     }
@@ -76,5 +75,125 @@ contract FoundryPlayground is FuzzSetup, Test {
         rewardRouterV2.claim();
 
         vm.stopPrank();
+    }
+
+    function test_4_stakeGMXThenUnstakeGMX() public {
+        console.log("\n\ntest_4_stakeGMXThenUnstakeGMX()");
+        console.log("__________________________\n");
+
+        // Initial setup - give user some GMX
+        vm.prank(owner);
+        gmx.mint(user1, 100e18);
+
+        vm.startPrank(user1, user1);
+
+        // Log initial state
+        console.log("");
+        console.log("gmx.balanceOf(user1) -> %s", gmx.balanceOf(user1));
+        console.log(
+            "stakedGmxTracker.stakedAmounts(user1) -> %s",
+            stakedGmxTracker.stakedAmounts(user1)
+        );
+        console.log(
+            "stakedGmxTracker.balanceOf(user1) -> %s",
+            stakedGmxTracker.balanceOf(user1)
+        );
+
+        // Approve and stake GMX
+        console.log(
+            "\nUSER1(%s) calls < gmx.approve(stakedGmxTracker, 100e18) >",
+            user1
+        );
+        gmx.approve(address(stakedGmxTracker), 100e18);
+
+        console.log(
+            "\nUSER1(%s) calls < rewardRouterV2.stakeGmx(100e18) >",
+            user1
+        );
+        rewardRouterV2.stakeGmx(100e18);
+
+        // Log post-stake state
+        console.log("");
+        console.log("gmx.balanceOf(user1) -> %s", gmx.balanceOf(user1));
+        console.log(
+            "stakedGmxTracker.balanceOf(user1) -> %s",
+            stakedGmxTracker.balanceOf(user1)
+        );
+        console.log(
+            "bonusGmxTracker.balanceOf(user1) -> %s",
+            bonusGmxTracker.balanceOf(user1)
+        );
+        console.log(
+            "extendedGmxTracker.balanceOf(user1) -> %s",
+            extendedGmxTracker.balanceOf(user1)
+        );
+        console.log(
+            "feeGmxTracker.balanceOf(user1) -> %s",
+            feeGmxTracker.balanceOf(user1)
+        );
+
+        console.log("");
+        console.log(
+            "stakedGmxTracker.stakedAmounts(user1) -> %s",
+            stakedGmxTracker.stakedAmounts(user1)
+        );
+        console.log(
+            "bonusGmxTracker.stakedAmounts(user1) -> %s",
+            bonusGmxTracker.stakedAmounts(user1)
+        );
+        console.log(
+            "extendedGmxTracker.stakedAmounts(user1) -> %s",
+            extendedGmxTracker.stakedAmounts(user1)
+        );
+        console.log(
+            "feeGmxTracker.stakedAmounts(user1) -> %s",
+            feeGmxTracker.stakedAmounts(user1)
+        );
+
+        // Perform unstake
+        console.log(
+            "\nUSER1(%s) calls < rewardRouterV2.unstakeGmx(100e18) >",
+            user1
+        );
+        rewardRouterV2.unstakeGmx(100e18);
+        vm.stopPrank();
+
+        // Log final state after unstake
+        console.log("");
+        console.log("gmx.balanceOf(user1) -> %s", gmx.balanceOf(user1));
+        console.log(
+            "stakedGmxTracker.balanceOf(user1) -> %s",
+            stakedGmxTracker.balanceOf(user1)
+        );
+        console.log(
+            "bonusGmxTracker.balanceOf(user1) -> %s",
+            bonusGmxTracker.balanceOf(user1)
+        );
+        console.log(
+            "extendedGmxTracker.balanceOf(user1) -> %s",
+            extendedGmxTracker.balanceOf(user1)
+        );
+        console.log(
+            "feeGmxTracker.balanceOf(user1) -> %s",
+            feeGmxTracker.balanceOf(user1)
+        );
+
+        console.log("");
+        console.log(
+            "stakedGmxTracker.stakedAmounts(user1) -> %s",
+            stakedGmxTracker.stakedAmounts(user1)
+        );
+        console.log(
+            "bonusGmxTracker.stakedAmounts(user1) -> %s",
+            bonusGmxTracker.stakedAmounts(user1)
+        );
+        console.log(
+            "extendedGmxTracker.stakedAmounts(user1) -> %s",
+            extendedGmxTracker.stakedAmounts(user1)
+        );
+        console.log(
+            "feeGmxTracker.stakedAmounts(user1) -> %s",
+            feeGmxTracker.stakedAmounts(user1)
+        );
     }
 }

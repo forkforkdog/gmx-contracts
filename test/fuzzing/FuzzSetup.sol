@@ -10,7 +10,9 @@ contract FuzzSetup is FuzzStorageVariables {
         step3_deployRewardTokens();
         step4_setupGmxRewards();
         step5_setupGlpRewards();
-        setupRewardRouterV2();
+        step6_setupExtendedRewards();
+        step7_setupNewRewardRouter();
+        step8_approvals();
     }
 
     function step1_deployBaseTokensAndFeeds() public {
@@ -138,25 +140,6 @@ contract FuzzSetup is FuzzStorageVariables {
         bonusGmxTracker.initialize(bonusTokens, address(bonusGmxDistributor));
         bonusGmxDistributor.updateLastDistributionTime();
 
-        // Setup extended tracker (new in V2)
-        extendedGmxTracker = new RewardTracker(
-            "Staked + Bonus + Extended GMX",
-            "sbeGMX"
-        );
-        extendedGmxDistributor = new RewardDistributor(
-            address(gmx),
-            address(extendedGmxTracker)
-        );
-
-        address[] memory extendedTokens = new address[](2);
-        extendedTokens[0] = address(bonusGmxTracker);
-        extendedTokens[1] = address(bnGmx);
-        extendedGmxTracker.initialize(
-            extendedTokens,
-            address(extendedGmxDistributor)
-        );
-        extendedGmxDistributor.updateLastDistributionTime();
-
         // Setup fee tracker
         feeGmxTracker = new RewardTracker("Staked + Bonus + Fee GMX", "sbfGMX");
         feeGmxDistributor = new RewardDistributor(
@@ -214,7 +197,28 @@ contract FuzzSetup is FuzzStorageVariables {
         stakedGlpTracker.setInPrivateStakingMode(true);
     }
 
-    function setupRewardRouterV2() public {
+    function step6_setupExtendedRewards() public {
+        // Deploy and initialize ExtendedGmxTracker
+        extendedGmxTracker = new RewardTracker("ExtendedGmxTracker", "sbeGMX");
+        extendedGmxDistributor = new RewardDistributor(
+            address(gmx),
+            address(extendedGmxTracker)
+        );
+
+        address[] memory depositTokens = new address[](1);
+        depositTokens[0] = address(bonusGmxTracker);
+        extendedGmxTracker.initialize(
+            depositTokens,
+            address(extendedGmxDistributor)
+        );
+        extendedGmxDistributor.updateLastDistributionTime();
+        extendedGmxDistributor.setTokensPerInterval(1e16); // 0.01 per second
+
+        // Configure FeeGmxTracker to accept ExtendedGmxTracker
+        feeGmxTracker.setDepositToken(address(extendedGmxTracker), true);
+    }
+
+    function step7_setupNewRewardRouter() public {
         // Set up vesting
         gmxVester = new Vester(
             "Vested GMX",
@@ -242,6 +246,7 @@ contract FuzzSetup is FuzzStorageVariables {
 
         // Deploy RewardRouterV2 with mock external handler
         mockExternalHandler = new MockExternalHandler();
+        // Deploy new RewardRouterV2
         rewardRouterV2 = new RewardRouterV2();
 
         RewardRouterV2.InitializeParams memory params = RewardRouterV2
@@ -264,9 +269,12 @@ contract FuzzSetup is FuzzStorageVariables {
                 govToken: address(govToken)
             });
 
+        // Set max boost basis points
         rewardRouterV2.initialize(params);
 
-        // Set handlers for reward router V2
+        rewardRouterV2.setMaxBoostBasisPoints(100);
+        rewardRouterV2.setVotingPowerType(RewardRouterV2.VotingPowerType(1)); // Assuming enum value 1
+
         stakedGmxTracker.setHandler(address(rewardRouterV2), true);
         bonusGmxTracker.setHandler(address(rewardRouterV2), true);
         extendedGmxTracker.setHandler(address(rewardRouterV2), true);
@@ -278,16 +286,171 @@ contract FuzzSetup is FuzzStorageVariables {
         bonusGmxTracker.setHandler(address(extendedGmxTracker), true);
         bnGmx.setHandler(address(extendedGmxTracker), true);
         extendedGmxTracker.setHandler(address(feeGmxTracker), true);
+        // Set GlpManager handler
+        glpManager.setHandler(address(rewardRouterV2), true);
+
+        gmx.setHandler(address(stakedGmxTracker), true);
+        esGmx.setHandler(address(stakedGmxTracker), true);
+        glp.setHandler(address(feeGlpTracker), true);
+
+        extendedGmxTracker.setHandler(address(bonusGmxTracker), true); // Instead of the reverse
+        extendedGmxTracker.setHandler(address(bnGmx), true); // Instead of the reverse
+
+        // Reward trackers need handlers for RewardRouterV2 AND each other
+        stakedGmxTracker.setHandler(address(bonusGmxTracker), true);
+        bonusGmxTracker.setHandler(address(extendedGmxTracker), true);
+        extendedGmxTracker.setHandler(address(feeGmxTracker), true);
+        feeGmxTracker.setHandler(address(stakedGlpTracker), true);
+        feeGlpTracker.setHandler(address(stakedGlpTracker), true);
+
+        // Tokens need handlers for their respective trackers
+        gmx.setHandler(address(rewardRouterV2), true); // For stake/unstake
+        esGmx.setHandler(address(rewardRouterV2), true); // For rewards claiming
+        glp.setHandler(address(rewardRouterV2), true); // For GLP operations
 
         // Set deposit tokens
         extendedGmxTracker.setDepositToken(address(bonusGmxTracker), true);
         extendedGmxTracker.setDepositToken(address(bnGmx), true);
         feeGmxTracker.setDepositToken(address(extendedGmxTracker), true);
 
-        // Set max boost basis points
-        rewardRouterV2.setMaxBoostBasisPoints(20_000);
-
         gmx.setMinter(owner, true);
+        gmx.setMinter(address(rewardRouterV2), true);
         esGmx.setMinter(owner, true);
+        esGmx.setMinter(address(rewardRouterV2), true);
+        govToken.setMinter(address(rewardRouterV2), true);
+    }
+
+    function step8_approvals() public {
+        // All possible approvals between all trackers
+
+        // stakedGmxTracker approvals to all others
+        vm.prank(user1);
+        stakedGmxTracker.approve(address(bonusGmxTracker), type(uint256).max);
+
+        vm.prank(user1);
+        stakedGmxTracker.approve(
+            address(extendedGmxTracker),
+            type(uint256).max
+        );
+
+        vm.prank(user1);
+        stakedGmxTracker.approve(address(feeGmxTracker), type(uint256).max);
+
+        vm.prank(user1);
+        stakedGmxTracker.approve(address(feeGlpTracker), type(uint256).max);
+
+        vm.prank(user1);
+        stakedGmxTracker.approve(address(stakedGlpTracker), type(uint256).max);
+
+        // bonusGmxTracker approvals to all others
+        vm.prank(user1);
+        bonusGmxTracker.approve(address(extendedGmxTracker), type(uint256).max);
+
+        vm.prank(user1);
+        bonusGmxTracker.approve(address(feeGmxTracker), type(uint256).max);
+
+        vm.prank(user1);
+        bonusGmxTracker.approve(address(feeGlpTracker), type(uint256).max);
+
+        vm.prank(user1);
+        bonusGmxTracker.approve(address(stakedGlpTracker), type(uint256).max);
+
+        vm.prank(user1);
+        bonusGmxTracker.approve(address(stakedGmxTracker), type(uint256).max);
+
+        // extendedGmxTracker approvals to all others
+        vm.prank(user1);
+        extendedGmxTracker.approve(address(bonusGmxTracker), type(uint256).max);
+
+        vm.prank(user1);
+        extendedGmxTracker.approve(address(feeGmxTracker), type(uint256).max);
+
+        vm.prank(user1);
+        extendedGmxTracker.approve(address(feeGlpTracker), type(uint256).max);
+
+        vm.prank(user1);
+        extendedGmxTracker.approve(
+            address(stakedGlpTracker),
+            type(uint256).max
+        );
+
+        vm.prank(user1);
+        extendedGmxTracker.approve(
+            address(stakedGmxTracker),
+            type(uint256).max
+        );
+
+        // feeGmxTracker approvals to all others
+        vm.prank(user1);
+        feeGmxTracker.approve(address(bonusGmxTracker), type(uint256).max);
+
+        vm.prank(user1);
+        feeGmxTracker.approve(address(extendedGmxTracker), type(uint256).max);
+
+        vm.prank(user1);
+        feeGmxTracker.approve(address(feeGlpTracker), type(uint256).max);
+
+        vm.prank(user1);
+        feeGmxTracker.approve(address(stakedGlpTracker), type(uint256).max);
+
+        vm.prank(user1);
+        feeGmxTracker.approve(address(stakedGmxTracker), type(uint256).max);
+
+        // feeGlpTracker approvals to all others
+        vm.prank(user1);
+        feeGlpTracker.approve(address(bonusGmxTracker), type(uint256).max);
+
+        vm.prank(user1);
+        feeGlpTracker.approve(address(extendedGmxTracker), type(uint256).max);
+
+        vm.prank(user1);
+        feeGlpTracker.approve(address(feeGmxTracker), type(uint256).max);
+
+        vm.prank(user1);
+        feeGlpTracker.approve(address(stakedGlpTracker), type(uint256).max);
+
+        vm.prank(user1);
+        feeGlpTracker.approve(address(stakedGmxTracker), type(uint256).max);
+
+        // stakedGlpTracker approvals to all others
+        vm.prank(user1);
+        stakedGlpTracker.approve(address(bonusGmxTracker), type(uint256).max);
+
+        vm.prank(user1);
+        stakedGlpTracker.approve(
+            address(extendedGmxTracker),
+            type(uint256).max
+        );
+
+        vm.prank(user1);
+        stakedGlpTracker.approve(address(feeGmxTracker), type(uint256).max);
+
+        vm.prank(user1);
+        stakedGlpTracker.approve(address(feeGlpTracker), type(uint256).max);
+
+        vm.prank(user1);
+        stakedGlpTracker.approve(address(stakedGmxTracker), type(uint256).max);
+
+        // extendedGmxTracker approvals to all others
+        vm.prank(user1);
+        extendedGmxTracker.approve(address(bonusGmxTracker), type(uint256).max);
+
+        vm.prank(user1);
+        extendedGmxTracker.approve(address(feeGmxTracker), type(uint256).max);
+
+        vm.prank(user1);
+        extendedGmxTracker.approve(address(feeGlpTracker), type(uint256).max);
+
+        vm.prank(user1);
+        extendedGmxTracker.approve(
+            address(stakedGlpTracker),
+            type(uint256).max
+        );
+
+        vm.prank(user1);
+        extendedGmxTracker.approve(
+            address(stakedGmxTracker),
+            type(uint256).max
+        );
     }
 }

@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.25;
+
+import "./FuzzActors.sol";
+
 // Core Tokens
 import {GMX} from "../../contracts/gmx/GMX.sol";
 import {EsGMX} from "../../contractsArbiscan/gmx/EsGMX.sol";
@@ -31,10 +34,7 @@ import {MockExternalHandler} from "../../contracts/mock/MockExternalHandler.sol"
 import {Reader} from "../../contracts/peripherals/Reader.sol";
 import {Timelock} from "../../contracts/peripherals/Timelock.sol";
 
-contract FuzzStorageVariables {
-    address public owner = address(0x10101);
-    address public user1 = address(0x10000);
-
+contract FuzzStorageVariables is FuzzActors {
     // Base Tokens
     Token public bnb;
     Token public btc;
