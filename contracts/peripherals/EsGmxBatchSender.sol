@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.6.12;
+pragma solidity 0.8.25;
+//NOTE: pragma was changed by fuzzer
 
 import "../libraries/token/IERC20.sol";
 import "../libraries/math/SafeMath.sol";
@@ -35,26 +36,50 @@ contract EsGmxBatchSender {
         for (uint256 i = 0; i < _accounts.length; i++) {
             IERC20(esGmx).transferFrom(msg.sender, _accounts[i], _amounts[i]);
 
-            uint256 nextTransferredCumulativeReward = _vester.transferredCumulativeRewards(_accounts[i]).add(_amounts[i]);
-            _vester.setTransferredCumulativeRewards(_accounts[i], nextTransferredCumulativeReward);
+            uint256 nextTransferredCumulativeReward = _vester
+                .transferredCumulativeRewards(_accounts[i])
+                .add(_amounts[i]);
+            _vester.setTransferredCumulativeRewards(
+                _accounts[i],
+                nextTransferredCumulativeReward
+            );
 
-            uint256 cumulativeReward = rewardTracker.cumulativeRewards(_accounts[i]);
-            uint256 totalCumulativeReward = cumulativeReward.add(nextTransferredCumulativeReward);
+            uint256 cumulativeReward = rewardTracker.cumulativeRewards(
+                _accounts[i]
+            );
+            uint256 totalCumulativeReward = cumulativeReward.add(
+                nextTransferredCumulativeReward
+            );
 
-            uint256 combinedAverageStakedAmount = _vester.getCombinedAverageStakedAmount(_accounts[i]);
+            uint256 combinedAverageStakedAmount = _vester
+                .getCombinedAverageStakedAmount(_accounts[i]);
 
-            if (combinedAverageStakedAmount > totalCumulativeReward.mul(_minRatio)) {
+            if (
+                combinedAverageStakedAmount >
+                totalCumulativeReward.mul(_minRatio)
+            ) {
                 continue;
             }
 
-            uint256 nextTransferredAverageStakedAmount = _minRatio.mul(totalCumulativeReward);
-            nextTransferredAverageStakedAmount = nextTransferredAverageStakedAmount.sub(
-                rewardTracker.averageStakedAmounts(_accounts[i]).mul(cumulativeReward).div(totalCumulativeReward)
+            uint256 nextTransferredAverageStakedAmount = _minRatio.mul(
+                totalCumulativeReward
             );
+            nextTransferredAverageStakedAmount = nextTransferredAverageStakedAmount
+                .sub(
+                    rewardTracker
+                        .averageStakedAmounts(_accounts[i])
+                        .mul(cumulativeReward)
+                        .div(totalCumulativeReward)
+                );
 
-            nextTransferredAverageStakedAmount = nextTransferredAverageStakedAmount.mul(totalCumulativeReward).div(nextTransferredCumulativeReward);
+            nextTransferredAverageStakedAmount = nextTransferredAverageStakedAmount
+                .mul(totalCumulativeReward)
+                .div(nextTransferredCumulativeReward);
 
-            _vester.setTransferredAverageStakedAmounts(_accounts[i], nextTransferredAverageStakedAmount);
+            _vester.setTransferredAverageStakedAmounts(
+                _accounts[i],
+                nextTransferredAverageStakedAmount
+            );
         }
     }
 }

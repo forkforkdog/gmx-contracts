@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.6.12;
+pragma solidity 0.8.25;
+//NOTE: pragma was changed by fuzzer
 
 import "../access/Governable.sol";
 import "../access/interfaces/IGovRequester.sol";
@@ -27,7 +28,7 @@ contract BuybackMigrator is IGovRequester {
     address public expectedGovGrantedCaller;
 
     address public rewardRouterTarget;
-    
+
     bool public isEnabled;
     bool public isRestakingCompleted;
 
@@ -65,10 +66,10 @@ contract BuybackMigrator is IGovRequester {
         oldRewardRouter = _oldRewardRouter;
         newRewardRouter = _newRewardRouter;
     }
-    
+
     function enableNewRewardRouter() external onlyAdmin {
         require(rewardRouterTarget == address(0), "invalid rewardRouterTarget");
-        
+
         address gov = Governable(stakedGmxTracker).gov();
         expectedGovGrantedCaller = gov;
 
@@ -92,7 +93,7 @@ contract BuybackMigrator is IGovRequester {
 
     function disableOldRewardRouter() external onlyAdmin {
         require(rewardRouterTarget == address(0), "invalid rewardRouterTarget");
-        
+
         address gov = Governable(stakedGmxTracker).gov();
         expectedGovGrantedCaller = gov;
 
@@ -116,14 +117,14 @@ contract BuybackMigrator is IGovRequester {
 
     function setHandlerAndDepositToken() external onlyAdmin {
         require(rewardRouterTarget == address(0), "invalid rewardRouterTarget");
-        
+
         address gov = Governable(stakedGmxTracker).gov();
         expectedGovGrantedCaller = gov;
 
         isRestakingCompleted = true;
 
         address[] memory targets = new address[](3);
-        
+
         targets[0] = bonusGmxTracker;
         targets[1] = bnGmx;
         targets[2] = feeGmxTracker;
@@ -138,18 +139,22 @@ contract BuybackMigrator is IGovRequester {
         if (isRestakingCompleted) {
             IHandlerTarget(bonusGmxTracker).setHandler(feeGmxTracker, false);
             IHandlerTarget(bnGmx).setHandler(feeGmxTracker, false);
-            IHandlerTarget(feeGmxTracker).setDepositToken(bonusGmxTracker, false);
+            IHandlerTarget(feeGmxTracker).setDepositToken(
+                bonusGmxTracker,
+                false
+            );
             IHandlerTarget(feeGmxTracker).setDepositToken(bnGmx, false);
-            
+
             Governable(bonusGmxTracker).setGov(mainGov);
             Governable(bnGmx).setGov(mainGov);
             Governable(feeGmxTracker).setGov(mainGov);
 
             delete isRestakingCompleted;
-        }
-
-        else {
-            require(rewardRouterTarget != address(0), "invalid rewardRouterTarget");
+        } else {
+            require(
+                rewardRouterTarget != address(0),
+                "invalid rewardRouterTarget"
+            );
             _toggleRewardRouter();
 
             Governable(stakedGmxTracker).setGov(mainGov);
@@ -171,22 +176,40 @@ contract BuybackMigrator is IGovRequester {
     }
 
     function _toggleRewardRouter() private {
-        IHandlerTarget(stakedGmxTracker).setHandler(rewardRouterTarget, isEnabled);
-        IHandlerTarget(bonusGmxTracker).setHandler(rewardRouterTarget, isEnabled);
-        IHandlerTarget(extendedGmxTracker).setHandler(rewardRouterTarget, isEnabled);
+        IHandlerTarget(stakedGmxTracker).setHandler(
+            rewardRouterTarget,
+            isEnabled
+        );
+        IHandlerTarget(bonusGmxTracker).setHandler(
+            rewardRouterTarget,
+            isEnabled
+        );
+        IHandlerTarget(extendedGmxTracker).setHandler(
+            rewardRouterTarget,
+            isEnabled
+        );
         IHandlerTarget(feeGmxTracker).setHandler(rewardRouterTarget, isEnabled);
         IHandlerTarget(feeGlpTracker).setHandler(rewardRouterTarget, isEnabled);
-        IHandlerTarget(stakedGlpTracker).setHandler(rewardRouterTarget, isEnabled);
+        IHandlerTarget(stakedGlpTracker).setHandler(
+            rewardRouterTarget,
+            isEnabled
+        );
         IHandlerTarget(gmxVester).setHandler(rewardRouterTarget, isEnabled);
         IHandlerTarget(glpVester).setHandler(rewardRouterTarget, isEnabled);
         IHandlerTarget(esGmx).setHandler(rewardRouterTarget, isEnabled);
         IMintable(bnGmx).setMinter(rewardRouterTarget, isEnabled);
-        
+
         if (isEnabled) {
-            IHandlerTarget(bonusGmxTracker).setHandler(extendedGmxTracker, true);
+            IHandlerTarget(bonusGmxTracker).setHandler(
+                extendedGmxTracker,
+                true
+            );
             IHandlerTarget(bnGmx).setHandler(extendedGmxTracker, true);
             IHandlerTarget(extendedGmxTracker).setHandler(feeGmxTracker, true);
-            IHandlerTarget(feeGmxTracker).setDepositToken(extendedGmxTracker, true);
+            IHandlerTarget(feeGmxTracker).setDepositToken(
+                extendedGmxTracker,
+                true
+            );
         }
     }
 }

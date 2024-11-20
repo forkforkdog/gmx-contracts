@@ -1,14 +1,15 @@
 //SPDX-License-Identifier: MIT
 
-pragma solidity 0.6.12;
+pragma solidity 0.8.25;
+//NOTE: pragma was changed by fuzzer
 pragma experimental ABIEncoderV2;
 
 import "../oracle/interfaces/IPyth.sol";
 
 contract MockPyth {
-    mapping (bytes32 => int64) public prices;
-    mapping (bytes32 => int32) public exponents;
-    mapping (bytes32 => uint256) public publishTimes;
+    mapping(bytes32 => int64) public prices;
+    mapping(bytes32 => int32) public exponents;
+    mapping(bytes32 => uint256) public publishTimes;
 
     function getPrice(
         bytes32 id
@@ -21,13 +22,20 @@ contract MockPyth {
         });
     }
 
-    function setPrice(bytes32 id, int64 price, int32 expo, uint256 publishTime) external {
+    function setPrice(
+        bytes32 id,
+        int64 price,
+        int32 expo,
+        uint256 publishTime
+    ) external {
         prices[id] = price;
         exponents[id] = expo;
         publishTimes[id] = publishTime;
     }
 
-    function updatePriceFeeds(bytes[] calldata /* updateData */) external payable {}
+    function updatePriceFeeds(
+        bytes[] calldata /* updateData */
+    ) external payable {}
 
     function getUpdateFee(
         bytes[] calldata /* updateData */

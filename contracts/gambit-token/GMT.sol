@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.6.12;
+pragma solidity 0.8.25;
+//NOTE: pragma was changed by fuzzer
 
 import "../libraries/math/SafeMath.sol";
 import "../libraries/token/IERC20.sol";
@@ -20,16 +21,16 @@ contract GMT is IERC20, IGMT, ITimelockTarget {
     bool public hasActiveMigration;
     uint256 public migrationTime;
 
-    mapping (address => uint256) public balances;
-    mapping (address => mapping (address => uint256)) public allowances;
+    mapping(address => uint256) public balances;
+    mapping(address => mapping(address => uint256)) public allowances;
 
-    mapping (address => bool) public admins;
+    mapping(address => bool) public admins;
 
     // only checked when hasActiveMigration is true
     // this can be used to block the AMM pair as a recipient
     // and protect liquidity providers during a migration
     // by disabling the selling of GMT
-    mapping (address => bool) public blockedRecipients;
+    mapping(address => bool) public blockedRecipients;
 
     // only checked when hasActiveMigration is true
     // this can be used for:
@@ -38,7 +39,7 @@ contract GMT is IERC20, IGMT, ITimelockTarget {
     // from adding liquidity before the initial liquidity is seeded
     // - only allowing removal of GMT liquidity and no other actions
     // during the migration phase
-    mapping (address => bool) public allowedMsgSenders;
+    mapping(address => bool) public allowedMsgSenders;
 
     modifier onlyGov() {
         require(msg.sender == gov, "GMT: forbidden");
@@ -74,7 +75,10 @@ contract GMT is IERC20, IGMT, ITimelockTarget {
     }
 
     function beginMigration() external override onlyAdmin {
-        require(block.timestamp > migrationTime, "GMT: migrationTime not yet passed");
+        require(
+            block.timestamp > migrationTime,
+            "GMT: migrationTime not yet passed"
+        );
         hasActiveMigration = true;
     }
 
@@ -99,36 +103,62 @@ contract GMT is IERC20, IGMT, ITimelockTarget {
     }
 
     // to help users who accidentally send their tokens to this contract
-    function withdrawToken(address _token, address _account, uint256 _amount) external override onlyGov {
+    function withdrawToken(
+        address _token,
+        address _account,
+        uint256 _amount
+    ) external override onlyGov {
         IERC20(_token).transfer(_account, _amount);
     }
 
-    function balanceOf(address _account) external view override returns (uint256) {
+    function balanceOf(
+        address _account
+    ) external view override returns (uint256) {
         return balances[_account];
     }
 
-    function transfer(address _recipient, uint256 _amount) external override returns (bool) {
+    function transfer(
+        address _recipient,
+        uint256 _amount
+    ) external override returns (bool) {
         _transfer(msg.sender, _recipient, _amount);
         return true;
     }
 
-    function allowance(address _owner, address _spender) external view override returns (uint256) {
+    function allowance(
+        address _owner,
+        address _spender
+    ) external view override returns (uint256) {
         return allowances[_owner][_spender];
     }
 
-    function approve(address _spender, uint256 _amount) external override returns (bool) {
+    function approve(
+        address _spender,
+        uint256 _amount
+    ) external override returns (bool) {
         _approve(msg.sender, _spender, _amount);
         return true;
     }
 
-    function transferFrom(address _sender, address _recipient, uint256 _amount) external override returns (bool) {
-        uint256 nextAllowance = allowances[_sender][msg.sender].sub(_amount, "GMT: transfer amount exceeds allowance");
+    function transferFrom(
+        address _sender,
+        address _recipient,
+        uint256 _amount
+    ) external override returns (bool) {
+        uint256 nextAllowance = allowances[_sender][msg.sender].sub(
+            _amount,
+            "GMT: transfer amount exceeds allowance"
+        );
         _approve(_sender, msg.sender, nextAllowance);
         _transfer(_sender, _recipient, _amount);
         return true;
     }
 
-    function _transfer(address _sender, address _recipient, uint256 _amount) private {
+    function _transfer(
+        address _sender,
+        address _recipient,
+        uint256 _amount
+    ) private {
         require(_sender != address(0), "GMT: transfer from the zero address");
         require(_recipient != address(0), "GMT: transfer to the zero address");
 
@@ -137,10 +167,13 @@ contract GMT is IERC20, IGMT, ITimelockTarget {
             require(!blockedRecipients[_recipient], "GMT: forbidden recipient");
         }
 
-        balances[_sender] = balances[_sender].sub(_amount, "GMT: transfer amount exceeds balance");
+        balances[_sender] = balances[_sender].sub(
+            _amount,
+            "GMT: transfer amount exceeds balance"
+        );
         balances[_recipient] = balances[_recipient].add(_amount);
 
-        emit Transfer(_sender, _recipient,_amount);
+        emit Transfer(_sender, _recipient, _amount);
     }
 
     function _mint(address _account, uint256 _amount) private {
@@ -152,7 +185,11 @@ contract GMT is IERC20, IGMT, ITimelockTarget {
         emit Transfer(address(0), _account, _amount);
     }
 
-    function _approve(address _owner, address _spender, uint256 _amount) private {
+    function _approve(
+        address _owner,
+        address _spender,
+        uint256 _amount
+    ) private {
         require(_owner != address(0), "GMT: approve from the zero address");
         require(_spender != address(0), "GMT: approve to the zero address");
 

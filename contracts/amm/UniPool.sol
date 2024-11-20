@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.6.12;
+pragma solidity 0.8.25;
+//NOTE: pragma was changed by fuzzer
 
 contract UniPool {
     struct Slot0 {
@@ -23,12 +24,19 @@ contract UniPool {
 
     Slot0 public slot0;
 
-    function tickSpacing() external pure returns (int24) { return 0; }
+    function tickSpacing() external pure returns (int24) {
+        return 0;
+    }
 
-    function observe(uint32[] calldata /* secondsAgos */)
+    function observe(
+        uint32[] calldata /* secondsAgos */
+    )
         external
         pure
-        returns (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s)
+        returns (
+            int56[] memory tickCumulatives,
+            uint160[] memory secondsPerLiquidityCumulativeX128s
+        )
     {
         return (tickCumulatives, secondsPerLiquidityCumulativeX128s);
     }

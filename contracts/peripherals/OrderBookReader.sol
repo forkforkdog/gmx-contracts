@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.6.12;
+pragma solidity 0.8.25;
+//NOTE: pragma was changed by fuzzer
 
 import "../libraries/math/SafeMath.sol";
 
@@ -18,14 +19,18 @@ contract OrderBookReader {
     }
 
     function getIncreaseOrders(
-        address payable _orderBookAddress, 
+        address payable _orderBookAddress,
         address _account,
         uint256[] memory _indices
     ) external view returns (uint256[] memory, address[] memory) {
         Vars memory vars = Vars(0, 0, _account, 5, 3);
 
-        uint256[] memory uintProps = new uint256[](vars.uintLength * _indices.length);
-        address[] memory addressProps = new address[](vars.addressLength * _indices.length);
+        uint256[] memory uintProps = new uint256[](
+            vars.uintLength * _indices.length
+        );
+        address[] memory addressProps = new address[](
+            vars.addressLength * _indices.length
+        );
 
         IOrderBook orderBook = IOrderBook(_orderBookAddress);
 
@@ -40,14 +45,17 @@ contract OrderBookReader {
                 bool isLong,
                 uint256 triggerPrice,
                 bool triggerAboveThreshold,
-                // uint256 executionFee
-            ) = orderBook.getIncreaseOrder(vars.account, vars.index);
+
+            ) = // uint256 executionFee
+                orderBook.getIncreaseOrder(vars.account, vars.index);
 
             uintProps[vars.i * vars.uintLength] = uint256(purchaseTokenAmount);
             uintProps[vars.i * vars.uintLength + 1] = uint256(sizeDelta);
             uintProps[vars.i * vars.uintLength + 2] = uint256(isLong ? 1 : 0);
             uintProps[vars.i * vars.uintLength + 3] = uint256(triggerPrice);
-            uintProps[vars.i * vars.uintLength + 4] = uint256(triggerAboveThreshold ? 1 : 0);
+            uintProps[vars.i * vars.uintLength + 4] = uint256(
+                triggerAboveThreshold ? 1 : 0
+            );
 
             addressProps[vars.i * vars.addressLength] = (purchaseToken);
             addressProps[vars.i * vars.addressLength + 1] = (collateralToken);
@@ -60,14 +68,18 @@ contract OrderBookReader {
     }
 
     function getDecreaseOrders(
-        address payable _orderBookAddress, 
+        address payable _orderBookAddress,
         address _account,
         uint256[] memory _indices
     ) external view returns (uint256[] memory, address[] memory) {
         Vars memory vars = Vars(0, 0, _account, 5, 2);
 
-        uint256[] memory uintProps = new uint256[](vars.uintLength * _indices.length);
-        address[] memory addressProps = new address[](vars.addressLength * _indices.length);
+        uint256[] memory uintProps = new uint256[](
+            vars.uintLength * _indices.length
+        );
+        address[] memory addressProps = new address[](
+            vars.addressLength * _indices.length
+        );
 
         IOrderBook orderBook = IOrderBook(_orderBookAddress);
 
@@ -81,14 +93,17 @@ contract OrderBookReader {
                 bool isLong,
                 uint256 triggerPrice,
                 bool triggerAboveThreshold,
-                // uint256 executionFee
-            ) = orderBook.getDecreaseOrder(vars.account, vars.index);
+
+            ) = // uint256 executionFee
+                orderBook.getDecreaseOrder(vars.account, vars.index);
 
             uintProps[vars.i * vars.uintLength] = uint256(collateralDelta);
             uintProps[vars.i * vars.uintLength + 1] = uint256(sizeDelta);
             uintProps[vars.i * vars.uintLength + 2] = uint256(isLong ? 1 : 0);
             uintProps[vars.i * vars.uintLength + 3] = uint256(triggerPrice);
-            uintProps[vars.i * vars.uintLength + 4] = uint256(triggerAboveThreshold ? 1 : 0);
+            uintProps[vars.i * vars.uintLength + 4] = uint256(
+                triggerAboveThreshold ? 1 : 0
+            );
 
             addressProps[vars.i * vars.addressLength] = (collateralToken);
             addressProps[vars.i * vars.addressLength + 1] = (indexToken);
@@ -100,14 +115,18 @@ contract OrderBookReader {
     }
 
     function getSwapOrders(
-        address payable _orderBookAddress, 
+        address payable _orderBookAddress,
         address _account,
         uint256[] memory _indices
     ) external view returns (uint256[] memory, address[] memory) {
         Vars memory vars = Vars(0, 0, _account, 5, 3);
 
-        uint256[] memory uintProps = new uint256[](vars.uintLength * _indices.length);
-        address[] memory addressProps = new address[](vars.addressLength * _indices.length);
+        uint256[] memory uintProps = new uint256[](
+            vars.uintLength * _indices.length
+        );
+        address[] memory addressProps = new address[](
+            vars.addressLength * _indices.length
+        );
 
         IOrderBook orderBook = IOrderBook(_orderBookAddress);
 
@@ -117,19 +136,24 @@ contract OrderBookReader {
                 address path0,
                 address path1,
                 address path2,
-                uint256 amountIn, 
-                uint256 minOut, 
-                uint256 triggerRatio, 
+                uint256 amountIn,
+                uint256 minOut,
+                uint256 triggerRatio,
                 bool triggerAboveThreshold,
                 bool shouldUnwrap,
-                // uint256 executionFee
-            ) = orderBook.getSwapOrder(vars.account, vars.index);
+
+            ) = // uint256 executionFee
+                orderBook.getSwapOrder(vars.account, vars.index);
 
             uintProps[vars.i * vars.uintLength] = uint256(amountIn);
             uintProps[vars.i * vars.uintLength + 1] = uint256(minOut);
             uintProps[vars.i * vars.uintLength + 2] = uint256(triggerRatio);
-            uintProps[vars.i * vars.uintLength + 3] = uint256(triggerAboveThreshold ? 1 : 0);
-            uintProps[vars.i * vars.uintLength + 4] = uint256(shouldUnwrap ? 1 : 0);
+            uintProps[vars.i * vars.uintLength + 3] = uint256(
+                triggerAboveThreshold ? 1 : 0
+            );
+            uintProps[vars.i * vars.uintLength + 4] = uint256(
+                shouldUnwrap ? 1 : 0
+            );
 
             addressProps[vars.i * vars.addressLength] = (path0);
             addressProps[vars.i * vars.addressLength + 1] = (path1);

@@ -2,27 +2,32 @@
 
 import "../ShortsTracker.sol";
 
-pragma solidity 0.6.12;
+pragma solidity 0.8.25;
+//NOTE: pragma was changed by fuzzer
 
 contract ShortsTrackerTest is ShortsTracker {
     constructor(address _vault) public ShortsTracker(_vault) {}
 
     function getNextGlobalShortDataWithRealisedPnl(
-       address _indexToken,
-       uint256 _nextPrice,
-       uint256 _sizeDelta,
-       int256 _realisedPnl,
-       bool _isIncrease
+        address _indexToken,
+        uint256 _nextPrice,
+        uint256 _sizeDelta,
+        int256 _realisedPnl,
+        bool _isIncrease
     ) public view returns (uint256, uint256) {
         uint256 averagePrice = globalShortAveragePrices[_indexToken];
-        uint256 priceDelta = averagePrice > _nextPrice ? averagePrice.sub(_nextPrice) : _nextPrice.sub(averagePrice);
+        uint256 priceDelta = averagePrice > _nextPrice
+            ? averagePrice.sub(_nextPrice)
+            : _nextPrice.sub(averagePrice);
 
         uint256 nextSize;
         uint256 delta;
         // avoid stack to deep
         {
             uint256 size = vault.globalShortSizes(_indexToken);
-            nextSize = _isIncrease ? size.add(_sizeDelta) : size.sub(_sizeDelta);
+            nextSize = _isIncrease
+                ? size.add(_sizeDelta)
+                : size.sub(_sizeDelta);
 
             if (nextSize == 0) {
                 return (0, 0);
@@ -46,7 +51,10 @@ contract ShortsTrackerTest is ShortsTracker {
         return (nextSize, nextAveragePrice);
     }
 
-    function setGlobalShortAveragePrice(address _token, uint256 _averagePrice) public {
+    function setGlobalShortAveragePrice(
+        address _token,
+        uint256 _averagePrice
+    ) public {
         globalShortAveragePrices[_token] = _averagePrice;
     }
 }

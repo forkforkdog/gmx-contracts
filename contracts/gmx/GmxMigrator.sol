@@ -1,6 +1,7 @@
 //SPDX-License-Identifier: MIT
 
-pragma solidity 0.6.12;
+pragma solidity 0.8.25;
+//NOTE: pragma was changed by fuzzer
 
 import "../libraries/math/SafeMath.sol";
 import "../libraries/token/IERC20.sol";
@@ -26,25 +27,31 @@ contract GmxMigrator is ReentrancyGuard, IGmxMigrator {
     address public admin;
 
     address[] public signers;
-    mapping (address => bool) public isSigner;
-    mapping (bytes32 => bool) public pendingActions;
-    mapping (address => mapping (bytes32 => bool)) public signedActions;
+    mapping(address => bool) public isSigner;
+    mapping(bytes32 => bool) public pendingActions;
+    mapping(address => mapping(bytes32 => bool)) public signedActions;
 
-    mapping (address => bool) public whitelistedTokens;
-    mapping (address => address) public override iouTokens;
-    mapping (address => uint256) public prices;
-    mapping (address => uint256) public caps;
+    mapping(address => bool) public whitelistedTokens;
+    mapping(address => address) public override iouTokens;
+    mapping(address => uint256) public prices;
+    mapping(address => uint256) public caps;
 
-    mapping (address => bool) public lpTokens;
-    mapping (address => address) public lpTokenAs;
-    mapping (address => address) public lpTokenBs;
+    mapping(address => bool) public lpTokens;
+    mapping(address => address) public lpTokenAs;
+    mapping(address => address) public lpTokenBs;
 
-    mapping (address => uint256) public tokenAmounts;
+    mapping(address => uint256) public tokenAmounts;
 
-    mapping (address => mapping (address => uint256)) public migratedAmounts;
-    mapping (address => mapping (address => uint256)) public maxMigrationAmounts;
+    mapping(address => mapping(address => uint256)) public migratedAmounts;
+    mapping(address => mapping(address => uint256)) public maxMigrationAmounts;
 
-    event SignalApprove(address token, address spender, uint256 amount, bytes32 action, uint256 nonce);
+    event SignalApprove(
+        address token,
+        address spender,
+        uint256 amount,
+        bytes32 action,
+        uint256 nonce
+    );
 
     event SignalPendingAction(bytes32 action, uint256 nonce);
     event SignAction(bytes32 action, uint256 nonce);
@@ -78,11 +85,26 @@ contract GmxMigrator is ReentrancyGuard, IGmxMigrator {
         address[] memory _lpTokenBs
     ) public onlyAdmin {
         require(!isInitialized, "GmxMigrator: already initialized");
-        require(_whitelistedTokens.length == _iouTokens.length, "GmxMigrator: invalid _iouTokens.length");
-        require(_whitelistedTokens.length == _prices.length, "GmxMigrator: invalid _prices.length");
-        require(_whitelistedTokens.length == _caps.length, "GmxMigrator: invalid _caps.length");
-        require(_lpTokens.length == _lpTokenAs.length, "GmxMigrator: invalid _lpTokenAs.length");
-        require(_lpTokens.length == _lpTokenBs.length, "GmxMigrator: invalid _lpTokenBs.length");
+        require(
+            _whitelistedTokens.length == _iouTokens.length,
+            "GmxMigrator: invalid _iouTokens.length"
+        );
+        require(
+            _whitelistedTokens.length == _prices.length,
+            "GmxMigrator: invalid _prices.length"
+        );
+        require(
+            _whitelistedTokens.length == _caps.length,
+            "GmxMigrator: invalid _caps.length"
+        );
+        require(
+            _lpTokens.length == _lpTokenAs.length,
+            "GmxMigrator: invalid _lpTokenAs.length"
+        );
+        require(
+            _lpTokens.length == _lpTokenBs.length,
+            "GmxMigrator: invalid _lpTokenBs.length"
+        );
 
         isInitialized = true;
 
@@ -115,25 +137,40 @@ contract GmxMigrator is ReentrancyGuard, IGmxMigrator {
         isMigrationActive = false;
     }
 
-    function setHasMaxMigrationLimit(bool _hasMaxMigrationLimit) public onlyAdmin {
+    function setHasMaxMigrationLimit(
+        bool _hasMaxMigrationLimit
+    ) public onlyAdmin {
         hasMaxMigrationLimit = _hasMaxMigrationLimit;
     }
 
-    function setMaxMigrationAmount(address _account, address _token, uint256 _maxMigrationAmount) public onlyAdmin {
+    function setMaxMigrationAmount(
+        address _account,
+        address _token,
+        uint256 _maxMigrationAmount
+    ) public onlyAdmin {
         maxMigrationAmounts[_account][_token] = _maxMigrationAmount;
     }
 
-    function migrate(
-        address _token,
-        uint256 _tokenAmount
-    ) public nonReentrant {
-        require(isMigrationActive, "GmxMigrator: migration is no longer active");
-        require(whitelistedTokens[_token], "GmxMigrator: token not whitelisted");
+    function migrate(address _token, uint256 _tokenAmount) public nonReentrant {
+        require(
+            isMigrationActive,
+            "GmxMigrator: migration is no longer active"
+        );
+        require(
+            whitelistedTokens[_token],
+            "GmxMigrator: token not whitelisted"
+        );
         require(_tokenAmount > 0, "GmxMigrator: invalid tokenAmount");
 
         if (hasMaxMigrationLimit) {
-            migratedAmounts[msg.sender][_token] = migratedAmounts[msg.sender][_token].add(_tokenAmount);
-            require(migratedAmounts[msg.sender][_token] <= maxMigrationAmounts[msg.sender][_token], "GmxMigrator: maxMigrationAmount exceeded");
+            migratedAmounts[msg.sender][_token] = migratedAmounts[msg.sender][
+                _token
+            ].add(_tokenAmount);
+            require(
+                migratedAmounts[msg.sender][_token] <=
+                    maxMigrationAmounts[msg.sender][_token],
+                "GmxMigrator: maxMigrationAmount exceeded"
+            );
         }
 
         uint256 tokenPrice = getTokenPrice(_token);
@@ -141,7 +178,10 @@ contract GmxMigrator is ReentrancyGuard, IGmxMigrator {
         require(mintAmount > 0, "GmxMigrator: invalid mintAmount");
 
         tokenAmounts[_token] = tokenAmounts[_token].add(_tokenAmount);
-        require(tokenAmounts[_token] < caps[_token], "GmxMigrator: token cap exceeded");
+        require(
+            tokenAmounts[_token] < caps[_token],
+            "GmxMigrator: token cap exceeded"
+        );
 
         IERC20(_token).transferFrom(msg.sender, address(this), _tokenAmount);
 
@@ -152,31 +192,62 @@ contract GmxMigrator is ReentrancyGuard, IGmxMigrator {
             require(tokenB != address(0), "GmxMigrator: invalid tokenB");
 
             IERC20(_token).approve(ammRouter, _tokenAmount);
-            IAmmRouter(ammRouter).removeLiquidity(tokenA, tokenB, _tokenAmount, 0, 0, address(this), block.timestamp);
+            IAmmRouter(ammRouter).removeLiquidity(
+                tokenA,
+                tokenB,
+                _tokenAmount,
+                0,
+                0,
+                address(this),
+                block.timestamp
+            );
         }
 
         address iouToken = getIouToken(_token);
         IGmxIou(iouToken).mint(msg.sender, mintAmount);
     }
 
-    function signalApprove(address _token, address _spender, uint256 _amount) external nonReentrant onlyAdmin {
+    function signalApprove(
+        address _token,
+        address _spender,
+        uint256 _amount
+    ) external nonReentrant onlyAdmin {
         actionsNonce++;
         uint256 nonce = actionsNonce;
-        bytes32 action = keccak256(abi.encodePacked("approve", _token, _spender, _amount, nonce));
+        bytes32 action = keccak256(
+            abi.encodePacked("approve", _token, _spender, _amount, nonce)
+        );
         _setPendingAction(action, nonce);
         emit SignalApprove(_token, _spender, _amount, action, nonce);
     }
 
-    function signApprove(address _token, address _spender, uint256 _amount, uint256 _nonce) external nonReentrant onlySigner {
-        bytes32 action = keccak256(abi.encodePacked("approve", _token, _spender, _amount, _nonce));
+    function signApprove(
+        address _token,
+        address _spender,
+        uint256 _amount,
+        uint256 _nonce
+    ) external nonReentrant onlySigner {
+        bytes32 action = keccak256(
+            abi.encodePacked("approve", _token, _spender, _amount, _nonce)
+        );
         _validateAction(action);
-        require(!signedActions[msg.sender][action], "GmxMigrator: already signed");
+        require(
+            !signedActions[msg.sender][action],
+            "GmxMigrator: already signed"
+        );
         signedActions[msg.sender][action] = true;
         emit SignAction(action, _nonce);
     }
 
-    function approve(address _token, address _spender, uint256 _amount, uint256 _nonce) external nonReentrant onlyAdmin {
-        bytes32 action = keccak256(abi.encodePacked("approve", _token, _spender, _amount, _nonce));
+    function approve(
+        address _token,
+        address _spender,
+        uint256 _amount,
+        uint256 _nonce
+    ) external nonReentrant onlyAdmin {
+        bytes32 action = keccak256(
+            abi.encodePacked("approve", _token, _spender, _amount, _nonce)
+        );
         _validateAction(action);
         _validateAuthorization(action);
 
@@ -184,7 +255,9 @@ contract GmxMigrator is ReentrancyGuard, IGmxMigrator {
         _clearAction(action, _nonce);
     }
 
-    function getTokenAmounts(address[] memory _tokens) public view returns (uint256[] memory) {
+    function getTokenAmounts(
+        address[] memory _tokens
+    ) public view returns (uint256[] memory) {
         uint256[] memory amounts = new uint256[](_tokens.length);
 
         for (uint256 i = 0; i < _tokens.length; i++) {
@@ -228,7 +301,10 @@ contract GmxMigrator is ReentrancyGuard, IGmxMigrator {
         if (count == 0) {
             revert("GmxMigrator: action not authorized");
         }
-        require(count >= minAuthorizations, "GmxMigrator: insufficient authorization");
+        require(
+            count >= minAuthorizations,
+            "GmxMigrator: insufficient authorization"
+        );
     }
 
     function _clearAction(bytes32 _action, uint256 _nonce) private {

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 
-pragma solidity 0.6.12;
+pragma solidity 0.8.25;
+//NOTE: pragma was changed by fuzzer
 pragma experimental ABIEncoderV2;
 
 import "../libraries/utils/Address.sol";
@@ -44,10 +45,7 @@ contract MockExternalHandler is IExternalHandler, ReentrancyGuard {
         }
 
         for (uint256 i; i < targets.length; i++) {
-            _makeExternalCall(
-                targets[i],
-                dataList[i]
-            );
+            _makeExternalCall(targets[i], dataList[i]);
         }
 
         for (uint256 i; i < refundTokens.length; i++) {
@@ -59,10 +57,7 @@ contract MockExternalHandler is IExternalHandler, ReentrancyGuard {
         }
     }
 
-    function _makeExternalCall(
-        address target,
-        bytes memory data
-    ) internal {
+    function _makeExternalCall(address target, bytes memory data) internal {
         if (!target.isContract()) {
             revert("Invalid External Call Target");
         }

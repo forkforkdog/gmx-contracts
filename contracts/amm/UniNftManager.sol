@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.6.12;
+pragma solidity 0.8.25;
+//NOTE: pragma was changed by fuzzer
 pragma experimental ABIEncoderV2;
 
 contract UniNftManager {
@@ -11,7 +12,9 @@ contract UniNftManager {
         uint128 amount1Max;
     }
 
-    function positions(uint256 /* tokenId */)
+    function positions(
+        uint256 /* tokenId */
+    )
         external
         pure
         returns (
@@ -29,23 +32,12 @@ contract UniNftManager {
             uint128 tokensOwed1
         )
     {
-        return (
-            0,
-            address(0),
-            address(0),
-            address(0),
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        );
+        return (0, address(0), address(0), address(0), 0, 0, 0, 0, 0, 0, 0, 0);
     }
 
-    function collect(CollectParams calldata params) external returns (uint256 amount0, uint256 amount1) {}
+    function collect(
+        CollectParams calldata params
+    ) external returns (uint256 amount0, uint256 amount1) {}
 
     function ownerOf(uint256 tokenId) external view returns (address) {}
 }

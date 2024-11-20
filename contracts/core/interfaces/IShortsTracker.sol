@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.6.12;
+pragma solidity 0.8.25;
+//NOTE: pragma was changed by fuzzer
 
 interface IShortsTracker {
     function isGlobalShortDataReady() external view returns (bool);
-    function globalShortAveragePrices(address _token) external view returns (uint256);
+    function globalShortAveragePrices(
+        address _token
+    ) external view returns (uint256);
     function getNextGlobalShortData(
         address _account,
         address _collateralToken,
@@ -23,5 +26,8 @@ interface IShortsTracker {
         bool _isIncrease
     ) external;
     function setIsGlobalShortDataReady(bool value) external;
-    function setInitData(address[] calldata _tokens, uint256[] calldata _averagePrices) external;
+    function setInitData(
+        address[] calldata _tokens,
+        uint256[] calldata _averagePrices
+    ) external;
 }

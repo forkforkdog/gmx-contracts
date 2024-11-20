@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.6.12;
+pragma solidity 0.8.25;
+//NOTE: pragma was changed by fuzzer
 
 import "./BaseMigrator.sol";
 import "./StabilizeCaller.sol";
 
 contract StabilizeMigrator is BaseMigrator {
-
     address public immutable stabilizeCaller;
 
     constructor(
@@ -22,19 +22,22 @@ contract StabilizeMigrator is BaseMigrator {
         address _bnGmx,
         address _rewardRouter,
         address _stabilizeCaller
-    ) public BaseMigrator(
-        _admin,
-        _stakedGmxTracker,
-        _bonusGmxTracker,
-        _feeGmxTracker,
-        _stakedGlpTracker,
-        _feeGlpTracker,
-        _gmxVester,
-        _glpVester,
-        _esGmx,
-        _bnGmx,
-        _rewardRouter
-    ) {
+    )
+        public
+        BaseMigrator(
+            _admin,
+            _stakedGmxTracker,
+            _bonusGmxTracker,
+            _feeGmxTracker,
+            _stakedGlpTracker,
+            _feeGlpTracker,
+            _gmxVester,
+            _glpVester,
+            _esGmx,
+            _bnGmx,
+            _rewardRouter
+        )
+    {
         stabilizeCaller = _stabilizeCaller;
     }
 

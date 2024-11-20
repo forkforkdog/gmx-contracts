@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.6.12;
+pragma solidity 0.8.25;
+//NOTE: pragma was changed by fuzzer
 
 import "../core/PositionRouter.sol";
 
@@ -15,9 +16,12 @@ contract PositionRouterReader {
         // increasePositionRequestKeys.length,
         // decreasePositionRequestKeysStart,
         // decreasePositionRequestKeys.length
-        (uint256 index, uint256 length, ,) = positionRouter.getRequestQueueLengths();
+        (uint256 index, uint256 length, , ) = positionRouter
+            .getRequestQueueLengths();
 
-        if (_endIndex > length) { _endIndex = length; }
+        if (_endIndex > length) {
+            _endIndex = length;
+        }
 
         uint256[] memory requestIndexes = new uint256[](_endIndex - index);
         address[] memory transferTokens = new address[](_endIndex - index);
@@ -26,7 +30,8 @@ contract PositionRouterReader {
 
         while (index < _endIndex) {
             bytes32 key = positionRouter.increasePositionRequestKeys(index);
-            address[] memory path = positionRouter.getIncreasePositionRequestPath(key);
+            address[] memory path = positionRouter
+                .getIncreasePositionRequestPath(key);
             if (path.length > 0) {
                 transferTokens[transferTokenIndex] = path[0];
             }

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.6.12;
+pragma solidity 0.8.25;
+//NOTE: pragma was changed by fuzzer
 
 import "../libraries/math/SafeMath.sol";
 import "../libraries/token/IERC20.sol";
@@ -41,7 +42,11 @@ contract RewardDistributor is IRewardDistributor, ReentrancyGuard, Governable {
     }
 
     // to help users who accidentally send their tokens to this contract
-    function withdrawToken(address _token, address _account, uint256 _amount) external onlyGov {
+    function withdrawToken(
+        address _token,
+        address _account,
+        uint256 _amount
+    ) external onlyGov {
         IERC20(_token).safeTransfer(_account, _amount);
     }
 
@@ -50,7 +55,10 @@ contract RewardDistributor is IRewardDistributor, ReentrancyGuard, Governable {
     }
 
     function setTokensPerInterval(uint256 _amount) external onlyAdmin {
-        require(lastDistributionTime != 0, "RewardDistributor: invalid lastDistributionTime");
+        require(
+            lastDistributionTime != 0,
+            "RewardDistributor: invalid lastDistributionTime"
+        );
         IRewardTracker(rewardTracker).updateRewards();
         tokensPerInterval = _amount;
         emit TokensPerIntervalChange(_amount);
@@ -66,14 +74,21 @@ contract RewardDistributor is IRewardDistributor, ReentrancyGuard, Governable {
     }
 
     function distribute() external override returns (uint256) {
-        require(msg.sender == rewardTracker, "RewardDistributor: invalid msg.sender");
+        require(
+            msg.sender == rewardTracker,
+            "RewardDistributor: invalid msg.sender"
+        );
         uint256 amount = pendingRewards();
-        if (amount == 0) { return 0; }
+        if (amount == 0) {
+            return 0;
+        }
 
         lastDistributionTime = block.timestamp;
 
         uint256 balance = IERC20(rewardToken).balanceOf(address(this));
-        if (amount > balance) { amount = balance; }
+        if (amount > balance) {
+            amount = balance;
+        }
 
         IERC20(rewardToken).safeTransfer(msg.sender, amount);
 

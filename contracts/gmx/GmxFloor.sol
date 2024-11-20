@@ -1,6 +1,7 @@
 //SPDX-License-Identifier: MIT
 
-pragma solidity 0.6.12;
+pragma solidity 0.8.25;
+//NOTE: pragma was changed by fuzzer
 
 import "../libraries/math/SafeMath.sol";
 import "../libraries/token/IERC20.sol";
@@ -26,7 +27,7 @@ contract GmxFloor is ReentrancyGuard, TokenManager {
     uint256 public mintedSupply;
     uint256 public multiplierPrecision;
 
-    mapping (address => bool) public isHandler;
+    mapping(address => bool) public isHandler;
 
     modifier onlyHandler() {
         require(isHandler[msg.sender], "GmxFloor: forbidden");
@@ -61,22 +62,34 @@ contract GmxFloor is ReentrancyGuard, TokenManager {
     }
 
     function setBackedSupply(uint256 _backedSupply) public onlyAdmin {
-        require(_backedSupply > backedSupply, "GmxFloor: invalid _backedSupply");
+        require(
+            _backedSupply > backedSupply,
+            "GmxFloor: invalid _backedSupply"
+        );
         backedSupply = _backedSupply;
     }
 
     function setMintMultiplier(uint256 _mintMultiplier) public onlyAdmin {
-        require(_mintMultiplier > mintMultiplier, "GmxFloor: invalid _mintMultiplier");
+        require(
+            _mintMultiplier > mintMultiplier,
+            "GmxFloor: invalid _mintMultiplier"
+        );
         mintMultiplier = _mintMultiplier;
     }
 
     // mint refers to increasing the circulating supply
     // the GMX tokens to be transferred out must be pre-transferred into this contract
-    function mint(uint256 _amount, uint256 _maxCost, address _receiver) public onlyHandler nonReentrant returns (uint256) {
+    function mint(
+        uint256 _amount,
+        uint256 _maxCost,
+        address _receiver
+    ) public onlyHandler nonReentrant returns (uint256) {
         require(_amount > 0, "GmxFloor: invalid _amount");
 
         uint256 currentMintPrice = getMintPrice();
-        uint256 nextMintPrice = currentMintPrice.add(_amount.mul(mintMultiplier).div(multiplierPrecision));
+        uint256 nextMintPrice = currentMintPrice.add(
+            _amount.mul(mintMultiplier).div(multiplierPrecision)
+        );
         uint256 averageMintPrice = currentMintPrice.add(nextMintPrice).div(2);
 
         uint256 cost = _amount.mul(averageMintPrice).div(PRICE_PRECISION);
@@ -91,7 +104,11 @@ contract GmxFloor is ReentrancyGuard, TokenManager {
         return cost;
     }
 
-    function burn(uint256 _amount, uint256 _minOut, address _receiver) public onlyHandler nonReentrant returns (uint256) {
+    function burn(
+        uint256 _amount,
+        uint256 _minOut,
+        address _receiver
+    ) public onlyHandler nonReentrant returns (uint256) {
         require(_amount > 0, "GmxFloor: invalid _amount");
 
         uint256 amountOut = getBurnAmountOut(_amount);
@@ -106,11 +123,17 @@ contract GmxFloor is ReentrancyGuard, TokenManager {
     }
 
     function getMintPrice() public view returns (uint256) {
-        return baseMintPrice.add(mintedSupply.mul(mintMultiplier).div(multiplierPrecision));
+        return
+            baseMintPrice.add(
+                mintedSupply.mul(mintMultiplier).div(multiplierPrecision)
+            );
     }
 
     function getBurnAmountOut(uint256 _amount) public view returns (uint256) {
         uint256 balance = IERC20(reserveToken).balanceOf(address(this));
-        return _amount.mul(balance).div(backedSupply).mul(BURN_BASIS_POINTS).div(BASIS_POINTS_DIVISOR);
+        return
+            _amount.mul(balance).div(backedSupply).mul(BURN_BASIS_POINTS).div(
+                BASIS_POINTS_DIVISOR
+            );
     }
 }

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.6.12;
+pragma solidity 0.8.25;
+//NOTE: pragma was changed by fuzzer
 
 import "../libraries/math/SafeMath.sol";
 import "../libraries/token/IERC20.sol";
@@ -36,8 +37,8 @@ contract Treasury is ReentrancyGuard, ITimelockTarget {
 
     address public gov;
 
-    mapping (address => uint256) public swapAmounts;
-    mapping (address => bool) public swapWhitelist;
+    mapping(address => uint256) public swapAmounts;
+    mapping(address => bool) public swapWhitelist;
 
     modifier onlyGov() {
         require(msg.sender == gov, "Treasury: forbidden");
@@ -76,26 +77,35 @@ contract Treasury is ReentrancyGuard, ITimelockTarget {
         fund = _fund;
     }
 
-    function extendUnlockTime(uint256 _unlockTime) external onlyGov nonReentrant {
+    function extendUnlockTime(
+        uint256 _unlockTime
+    ) external onlyGov nonReentrant {
         require(_unlockTime > unlockTime, "Treasury: invalid _unlockTime");
         unlockTime = _unlockTime;
     }
 
-    function addWhitelists(address[] memory _accounts) external onlyGov nonReentrant {
+    function addWhitelists(
+        address[] memory _accounts
+    ) external onlyGov nonReentrant {
         for (uint256 i = 0; i < _accounts.length; i++) {
             address account = _accounts[i];
             swapWhitelist[account] = true;
         }
     }
 
-    function removeWhitelists(address[] memory _accounts) external onlyGov nonReentrant {
+    function removeWhitelists(
+        address[] memory _accounts
+    ) external onlyGov nonReentrant {
         for (uint256 i = 0; i < _accounts.length; i++) {
             address account = _accounts[i];
             swapWhitelist[account] = false;
         }
     }
 
-    function updateWhitelist(address prevAccount, address nextAccount) external onlyGov nonReentrant {
+    function updateWhitelist(
+        address prevAccount,
+        address nextAccount
+    ) external onlyGov nonReentrant {
         require(swapWhitelist[prevAccount], "Treasury: invalid prevAccount");
         swapWhitelist[prevAccount] = false;
         swapWhitelist[nextAccount] = true;
@@ -111,13 +121,19 @@ contract Treasury is ReentrancyGuard, ITimelockTarget {
         require(busdReceived <= busdHardCap, "Treasury: busdHardCap exceeded");
 
         swapAmounts[account] = swapAmounts[account].add(_busdAmount);
-        require(swapAmounts[account] <= busdSlotCap, "Treasury: busdSlotCap exceeded");
+        require(
+            swapAmounts[account] <= busdSlotCap,
+            "Treasury: busdSlotCap exceeded"
+        );
 
         // receive BUSD
         uint256 busdBefore = IERC20(busd).balanceOf(address(this));
         IERC20(busd).transferFrom(account, address(this), _busdAmount);
         uint256 busdAfter = IERC20(busd).balanceOf(address(this));
-        require(busdAfter.sub(busdBefore) == _busdAmount, "Treasury: invalid transfer");
+        require(
+            busdAfter.sub(busdBefore) == _busdAmount,
+            "Treasury: invalid transfer"
+        );
 
         // send GMT
         uint256 gmtAmount = _busdAmount.mul(PRECISION).div(gmtPresalePrice);
@@ -128,7 +144,9 @@ contract Treasury is ReentrancyGuard, ITimelockTarget {
         require(!isLiquidityAdded, "Treasury: liquidity already added");
         isLiquidityAdded = true;
 
-        uint256 busdAmount = busdReceived.mul(busdBasisPoints).div(BASIS_POINTS_DIVISOR);
+        uint256 busdAmount = busdReceived.mul(busdBasisPoints).div(
+            BASIS_POINTS_DIVISOR
+        );
         uint256 gmtAmount = busdAmount.mul(PRECISION).div(gmtListingPrice);
 
         IERC20(busd).approve(router, busdAmount);
@@ -153,13 +171,25 @@ contract Treasury is ReentrancyGuard, ITimelockTarget {
         IERC20(busd).transfer(fund, fundAmount);
     }
 
-    function withdrawToken(address _token, address _account, uint256 _amount) external override onlyGov nonReentrant {
-        require(block.timestamp > unlockTime, "Treasury: unlockTime not yet passed");
+    function withdrawToken(
+        address _token,
+        address _account,
+        uint256 _amount
+    ) external override onlyGov nonReentrant {
+        require(
+            block.timestamp > unlockTime,
+            "Treasury: unlockTime not yet passed"
+        );
         IERC20(_token).transfer(_account, _amount);
     }
 
-    function increaseBusdBasisPoints(uint256 _busdBasisPoints) external onlyGov nonReentrant {
-        require(_busdBasisPoints > busdBasisPoints, "Treasury: invalid _busdBasisPoints");
+    function increaseBusdBasisPoints(
+        uint256 _busdBasisPoints
+    ) external onlyGov nonReentrant {
+        require(
+            _busdBasisPoints > busdBasisPoints,
+            "Treasury: invalid _busdBasisPoints"
+        );
         busdBasisPoints = _busdBasisPoints;
     }
 

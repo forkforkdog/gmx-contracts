@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.6.12;
+pragma solidity 0.8.25;
+//NOTE: pragma was changed by fuzzer
 
 import "../libraries/math/SafeMath.sol";
 import "../libraries/token/IERC20.sol";
@@ -45,7 +46,11 @@ contract BonusDistributor is IRewardDistributor, ReentrancyGuard, Governable {
     }
 
     // to help users who accidentally send their tokens to this contract
-    function withdrawToken(address _token, address _account, uint256 _amount) external onlyGov {
+    function withdrawToken(
+        address _token,
+        address _account,
+        uint256 _amount
+    ) external onlyGov {
         IERC20(_token).safeTransfer(_account, _amount);
     }
 
@@ -53,8 +58,13 @@ contract BonusDistributor is IRewardDistributor, ReentrancyGuard, Governable {
         lastDistributionTime = block.timestamp;
     }
 
-    function setBonusMultiplier(uint256 _bonusMultiplierBasisPoints) external onlyAdmin {
-        require(lastDistributionTime != 0, "BonusDistributor: invalid lastDistributionTime");
+    function setBonusMultiplier(
+        uint256 _bonusMultiplierBasisPoints
+    ) external onlyAdmin {
+        require(
+            lastDistributionTime != 0,
+            "BonusDistributor: invalid lastDistributionTime"
+        );
         IRewardTracker(rewardTracker).updateRewards();
         bonusMultiplierBasisPoints = _bonusMultiplierBasisPoints;
         emit BonusMultiplierChange(_bonusMultiplierBasisPoints);
@@ -62,7 +72,11 @@ contract BonusDistributor is IRewardDistributor, ReentrancyGuard, Governable {
 
     function tokensPerInterval() public view override returns (uint256) {
         uint256 supply = IERC20(rewardTracker).totalSupply();
-        return supply.mul(bonusMultiplierBasisPoints).div(BASIS_POINTS_DIVISOR).div(BONUS_DURATION);
+        return
+            supply
+                .mul(bonusMultiplierBasisPoints)
+                .div(BASIS_POINTS_DIVISOR)
+                .div(BONUS_DURATION);
     }
 
     function pendingRewards() public view override returns (uint256) {
@@ -73,18 +87,30 @@ contract BonusDistributor is IRewardDistributor, ReentrancyGuard, Governable {
         uint256 supply = IERC20(rewardTracker).totalSupply();
         uint256 timeDiff = block.timestamp.sub(lastDistributionTime);
 
-        return timeDiff.mul(supply).mul(bonusMultiplierBasisPoints).div(BASIS_POINTS_DIVISOR).div(BONUS_DURATION);
+        return
+            timeDiff
+                .mul(supply)
+                .mul(bonusMultiplierBasisPoints)
+                .div(BASIS_POINTS_DIVISOR)
+                .div(BONUS_DURATION);
     }
 
     function distribute() external override returns (uint256) {
-        require(msg.sender == rewardTracker, "BonusDistributor: invalid msg.sender");
+        require(
+            msg.sender == rewardTracker,
+            "BonusDistributor: invalid msg.sender"
+        );
         uint256 amount = pendingRewards();
-        if (amount == 0) { return 0; }
+        if (amount == 0) {
+            return 0;
+        }
 
         lastDistributionTime = block.timestamp;
 
         uint256 balance = IERC20(rewardToken).balanceOf(address(this));
-        if (amount > balance) { amount = balance; }
+        if (amount > balance) {
+            amount = balance;
+        }
 
         IERC20(rewardToken).safeTransfer(msg.sender, amount);
 

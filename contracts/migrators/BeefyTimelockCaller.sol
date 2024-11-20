@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.6.12;
+pragma solidity 0.8.25;
+//NOTE: pragma was changed by fuzzer
 
 import "./interfaces/ITimelockController.sol";
 
@@ -16,10 +17,7 @@ contract BeefyTimelockCaller {
         gov = msg.sender;
     }
 
-    function initialize(
-        uint256 _chainId,
-        address _parent
-    ) external {
+    function initialize(uint256 _chainId, address _parent) external {
         require(msg.sender == gov, "forbidden");
         require(!isInitialized, "already initialized");
         isInitialized = true;
@@ -32,7 +30,9 @@ contract BeefyTimelockCaller {
         require(msg.sender == parent, "forbidden");
 
         if (chainId == 42161) {
-            ITimelockController timelock = ITimelockController(0x9A94784264AaAE397441c1e47fA132BE4e61BdaD);
+            ITimelockController timelock = ITimelockController(
+                0x9A94784264AaAE397441c1e47fA132BE4e61BdaD
+            );
 
             address[] memory targets = new address[](2);
             targets[0] = 0x5B904f19fb9ccf493b623e5c8cE91603665788b0;
@@ -49,17 +49,13 @@ contract BeefyTimelockCaller {
             bytes32 predecessor = 0x0000000000000000000000000000000000000000000000000000000000000000;
             bytes32 salt = 0x0000000000000000000000000000000000000000000000000000000000000000;
 
-            timelock.executeBatch(
-                targets,
-                values,
-                payloads,
-                predecessor,
-                salt
-            );
+            timelock.executeBatch(targets, values, payloads, predecessor, salt);
         }
 
         if (chainId == 43114) {
-            ITimelockController timelock = ITimelockController(0x690216f462615b749bEEB5AA3f1d89a2BEc45Ecf);
+            ITimelockController timelock = ITimelockController(
+                0x690216f462615b749bEEB5AA3f1d89a2BEc45Ecf
+            );
 
             address[] memory targets = new address[](2);
             targets[0] = 0x408835a5616baE0ECE4d3eF821C1D1CC88a2179E;
@@ -76,13 +72,7 @@ contract BeefyTimelockCaller {
             bytes32 predecessor = 0x0000000000000000000000000000000000000000000000000000000000000000;
             bytes32 salt = 0x0000000000000000000000000000000000000000000000000000000000000000;
 
-            timelock.executeBatch(
-                targets,
-                values,
-                payloads,
-                predecessor,
-                salt
-            );
+            timelock.executeBatch(targets, values, payloads, predecessor, salt);
         }
     }
 }

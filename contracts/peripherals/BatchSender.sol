@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.6.12;
+pragma solidity 0.8.25;
+//NOTE: pragma was changed by fuzzer
 
 import "../libraries/token/IERC20.sol";
 import "../libraries/math/SafeMath.sol";
@@ -10,7 +11,7 @@ import "../access/Governable.sol";
 contract BatchSender is Governable {
     using SafeMath for uint256;
 
-    mapping (address => bool) public isHandler;
+    mapping(address => bool) public isHandler;
 
     event BatchSend(
         uint256 indexed typeId,
@@ -32,15 +33,29 @@ contract BatchSender is Governable {
         isHandler[_handler] = _isActive;
     }
 
-    function send(IERC20 _token, address[] memory _accounts, uint256[] memory _amounts) public onlyHandler {
+    function send(
+        IERC20 _token,
+        address[] memory _accounts,
+        uint256[] memory _amounts
+    ) public onlyHandler {
         _send(_token, _accounts, _amounts, 0);
     }
 
-    function sendAndEmit(IERC20 _token, address[] memory _accounts, uint256[] memory _amounts, uint256 _typeId) public onlyHandler {
+    function sendAndEmit(
+        IERC20 _token,
+        address[] memory _accounts,
+        uint256[] memory _amounts,
+        uint256 _typeId
+    ) public onlyHandler {
         _send(_token, _accounts, _amounts, _typeId);
     }
 
-    function _send(IERC20 _token, address[] memory _accounts, uint256[] memory _amounts, uint256 _typeId) private {
+    function _send(
+        IERC20 _token,
+        address[] memory _accounts,
+        uint256[] memory _amounts,
+        uint256 _typeId
+    ) private {
         for (uint256 i = 0; i < _accounts.length; i++) {
             address account = _accounts[i];
             uint256 amount = _amounts[i];

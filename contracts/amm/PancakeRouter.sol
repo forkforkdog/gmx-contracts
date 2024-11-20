@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.6.12;
+pragma solidity 0.8.25;
+//NOTE: pragma was changed by fuzzer
 
 import "../tokens/Token.sol";
 import "../libraries/token/IERC20.sol";
@@ -22,8 +23,12 @@ contract PancakeRouter is IPancakeRouter {
         uint256 /*amountBMin*/,
         address to,
         uint256 deadline
-    ) external override returns (uint256 amountA, uint256 amountB, uint256 liquidity) {
-        require(deadline >= block.timestamp, 'PancakeRouter: EXPIRED');
+    )
+        external
+        override
+        returns (uint256 amountA, uint256 amountB, uint256 liquidity)
+    {
+        require(deadline >= block.timestamp, "PancakeRouter: EXPIRED");
 
         Token(pair).mint(to, 1000);
 

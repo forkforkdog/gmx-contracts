@@ -1,6 +1,7 @@
 //SPDX-License-Identifier: MIT
 
-pragma solidity 0.6.12;
+pragma solidity 0.8.25;
+//NOTE: pragma was changed by fuzzer
 
 import "../libraries/math/SafeMath.sol";
 import "../libraries/token/IERC20.sol";
@@ -23,8 +24,8 @@ contract YieldTracker is IYieldTracker, ReentrancyGuard {
     address public distributor;
 
     uint256 public cumulativeRewardPerToken;
-    mapping (address => uint256) public claimableReward;
-    mapping (address => uint256) public previousCumulatedRewardPerToken;
+    mapping(address => uint256) public claimableReward;
+    mapping(address => uint256) public previousCumulatedRewardPerToken;
 
     event Claim(address receiver, uint256 amount);
 
@@ -47,38 +48,61 @@ contract YieldTracker is IYieldTracker, ReentrancyGuard {
     }
 
     // to help users who accidentally send their tokens to this contract
-    function withdrawToken(address _token, address _account, uint256 _amount) external onlyGov {
+    function withdrawToken(
+        address _token,
+        address _account,
+        uint256 _amount
+    ) external onlyGov {
         IERC20(_token).safeTransfer(_account, _amount);
     }
 
-    function claim(address _account, address _receiver) external override returns (uint256) {
+    function claim(
+        address _account,
+        address _receiver
+    ) external override returns (uint256) {
         require(msg.sender == yieldToken, "YieldTracker: forbidden");
         updateRewards(_account);
 
         uint256 tokenAmount = claimableReward[_account];
         claimableReward[_account] = 0;
 
-        address rewardToken = IDistributor(distributor).getRewardToken(address(this));
+        address rewardToken = IDistributor(distributor).getRewardToken(
+            address(this)
+        );
         IERC20(rewardToken).safeTransfer(_receiver, tokenAmount);
         emit Claim(_account, tokenAmount);
 
         return tokenAmount;
     }
 
-    function getTokensPerInterval() external override view returns (uint256) {
+    function getTokensPerInterval() external view override returns (uint256) {
         return IDistributor(distributor).tokensPerInterval(address(this));
     }
 
-    function claimable(address _account) external override view returns (uint256) {
+    function claimable(
+        address _account
+    ) external view override returns (uint256) {
         uint256 stakedBalance = IYieldToken(yieldToken).stakedBalance(_account);
         if (stakedBalance == 0) {
             return claimableReward[_account];
         }
-        uint256 pendingRewards = IDistributor(distributor).getDistributionAmount(address(this)).mul(PRECISION);
+        uint256 pendingRewards = IDistributor(distributor)
+            .getDistributionAmount(address(this))
+            .mul(PRECISION);
         uint256 totalStaked = IYieldToken(yieldToken).totalStaked();
-        uint256 nextCumulativeRewardPerToken = cumulativeRewardPerToken.add(pendingRewards.div(totalStaked));
-        return claimableReward[_account].add(
-            stakedBalance.mul(nextCumulativeRewardPerToken.sub(previousCumulatedRewardPerToken[_account])).div(PRECISION));
+        uint256 nextCumulativeRewardPerToken = cumulativeRewardPerToken.add(
+            pendingRewards.div(totalStaked)
+        );
+        return
+            claimableReward[_account].add(
+                stakedBalance
+                    .mul(
+                        nextCumulativeRewardPerToken.sub(
+                            previousCumulatedRewardPerToken[_account]
+                        )
+                    )
+                    .div(PRECISION)
+            );
     }
 
     function updateRewards(address _account) public override nonReentrant {
@@ -93,7 +117,9 @@ contract YieldTracker is IYieldTracker, ReentrancyGuard {
         // only update cumulativeRewardPerToken when there are stakers, i.e. when totalStaked > 0
         // if blockReward == 0, then there will be no change to cumulativeRewardPerToken
         if (totalStaked > 0 && blockReward > 0) {
-            _cumulativeRewardPerToken = _cumulativeRewardPerToken.add(blockReward.mul(PRECISION).div(totalStaked));
+            _cumulativeRewardPerToken = _cumulativeRewardPerToken.add(
+                blockReward.mul(PRECISION).div(totalStaked)
+            );
             cumulativeRewardPerToken = _cumulativeRewardPerToken;
         }
 
@@ -104,14 +130,24 @@ contract YieldTracker is IYieldTracker, ReentrancyGuard {
         }
 
         if (_account != address(0)) {
-            uint256 stakedBalance = IYieldToken(yieldToken).stakedBalance(_account);
-            uint256 _previousCumulatedReward = previousCumulatedRewardPerToken[_account];
+            uint256 stakedBalance = IYieldToken(yieldToken).stakedBalance(
+                _account
+            );
+            uint256 _previousCumulatedReward = previousCumulatedRewardPerToken[
+                _account
+            ];
             uint256 _claimableReward = claimableReward[_account].add(
-                stakedBalance.mul(_cumulativeRewardPerToken.sub(_previousCumulatedReward)).div(PRECISION)
+                stakedBalance
+                    .mul(
+                        _cumulativeRewardPerToken.sub(_previousCumulatedReward)
+                    )
+                    .div(PRECISION)
             );
 
             claimableReward[_account] = _claimableReward;
-            previousCumulatedRewardPerToken[_account] = _cumulativeRewardPerToken;
+            previousCumulatedRewardPerToken[
+                _account
+            ] = _cumulativeRewardPerToken;
         }
     }
 }
